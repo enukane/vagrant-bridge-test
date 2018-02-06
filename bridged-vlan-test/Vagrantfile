@@ -1,0 +1,34 @@
+# tests if bridging to vlan interface (with mac addr override)  works: OK
+#  172.16.11.20 -> (host: vlan0 with tag 3000) -> 172.11.10.100(vm with host's mac address )
+#  172.16.12.20 -> (host: vlan1 with tag 3001) -> 172.11.11.100(vm with host's mac address )
+#
+Vagrant.configure("2") do |bridged_seil|
+  bridged_seil.vm.box = "seil"
+
+  # lan0: dhcp (for operation)
+  #   auto-generated
+
+  # lan1: bridges to host vlan0 (with tag 3000)
+  bridged_seil.vm.network "public_network", mac: "38c9862789a5"
+
+  # lan2: bridges to host vlan1 (with tag 3001)
+  bridged_seil.vm.network "public_network", mac: "38c9862789a5"
+
+  #bridged_seil.vm.provider :VirtualBox do |vb|
+  #  vb.customize ["modifyvm", :id, "--nicpromisc2", "allow-all",
+  #                                 "--nicpromisc2", "allow-all"]
+  #end
+
+  bridged_seil.vm.provision :seil do |seil|
+    seil.starter_key = File.read("seil-starter.key")
+    seil.function_key = File.read("seil-function.key")
+
+    # password is "testdslite", change it as you like it
+    seil.config = <<-CONF
+      hostname seil-bridged
+
+      interface lan1 address 172.16.11.100/24
+      interface lan2 address 172.16.12.100/24
+    CONF
+  end
+end

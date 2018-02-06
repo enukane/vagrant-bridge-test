@@ -1,0 +1,28 @@
+# tests if bridging to native interface (trunked) works: NG
+#  172.16.13.20 -> no addr -> 172.16.13.100(vm: vlan0 with tag 3000)
+#  172.16.14.20 ->         -> 172.16.14.100(vm: vlan1 with tag 3001)
+#
+Vagrant.configure("2") do |bridged_seil|
+  bridged_seil.vm.box = "seil"
+
+  # lan0: dhcp (for operation)
+  #   auto-generated
+
+  # lan1: host bridges trunk port
+  bridged_seil.vm.network "public_network", mac: "38c9862789a5"
+
+  bridged_seil.vm.provision :seil do |seil|
+    seil.starter_key = File.read("seil-starter.key")
+    seil.function_key = File.read("seil-function.key")
+
+    # password is "testdslite", change it as you like it
+    seil.config = <<-CONF
+      hostname seil-bridged
+
+      interface vlan0 tag 3000 over lan1
+      interface vlan0 address 172.16.13.100/24
+      interface vlan1 tag 3001 over lan1
+      interface vlan1 address 172.16.14.100/24
+    CONF
+  end
+end

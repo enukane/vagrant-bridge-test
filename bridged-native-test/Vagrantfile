@@ -1,0 +1,28 @@
+# tests if bridging to native interface works: OK
+#  172.16.10.20 -> 172.16.10.10(host) -> 172.16.10.100(vm)
+#
+Vagrant.configure("2") do |bridged_seil|
+  bridged_seil.vm.box = "seil"
+
+  # lan0: dhcp (for operation)
+  #   auto-generated
+
+  # lan1: host bridges native 
+  bridged_seil.vm.network "public_network"
+
+  bridged_seil.vm.provider :VirtualBox do |vb|
+    vb.customize ["modifyvm", :id, "--nicpromisc2", "allow-all"]
+  end
+
+  bridged_seil.vm.provision :seil do |seil|
+    seil.starter_key = File.read("seil-starter.key")
+    seil.function_key = File.read("seil-function.key")
+
+    # password is "testdslite", change it as you like it
+    seil.config = <<-CONF
+      hostname seil-bridged
+
+      interface lan1 address 172.16.10.100/24
+          CONF
+  end
+end
